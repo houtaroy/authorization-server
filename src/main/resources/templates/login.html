@@ -1,15 +1,16 @@
 <!DOCTYPE html>
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org">
 <head>
-    <meta charset="utf-8" />
+    <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Spring Authorization Server sample</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
-    <link rel="stylesheet" href="/assets/css/signin.css" th:href="@{/assets/css/signin.css}" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css"
+          integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+    <link rel="stylesheet" href="/assets/css/signin.css" th:href="@{/assets/css/signin.css}"/>
 </head>
 <body>
 <div class="container">
-    <form class="form-signin w-100 m-auto" method="post" th:action="@{/login}">
+    <div class="form-signin w-100 m-auto">
         <div th:if="${param.error}" class="alert alert-danger" role="alert">
             Invalid username or password.
         </div>
@@ -17,26 +18,78 @@
             You have been logged out.
         </div>
         <h1 class="h3 mb-3 fw-normal">Please sign in</h1>
-        <div class="form-floating">
-            <input type="text" id="username" name="username" class="form-control" required autofocus>
-            <label for="username">Username</label>
+
+        <!-- 登录方式切换按钮 -->
+        <div class="mb-3 text-center">
+            <button type="button" class="btn btn-outline-primary" id="switch-to-password">Use Password Login</button>
+            <button type="button" class="btn btn-outline-secondary" id="switch-to-sms">Use SMS Login</button>
         </div>
-        <div class="form-floating">
-            <input type="password" id="password" name="password" class="form-control" required>
-            <label for="password">Password</label>
-        </div>
-        <div>
+
+        <!-- 用户名密码登录 -->
+        <form id="password-login" method="post" th:action="@{/login}">
+            <div class="form-floating mb-3">
+                <input type="text" id="username" name="username" class="form-control" required autofocus>
+                <label for="username">Username</label>
+            </div>
+            <div class="form-floating mb-3">
+                <input type="password" id="password" name="password" class="form-control" required>
+                <label for="password">Password</label>
+            </div>
+            <input type="text" id="password-type" name="type" value="password" hidden="hidden">
             <button class="w-100 btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
-            <a class="w-100 btn btn-light btn-block bg-white" href="/oauth2/authorization/google-idp" role="link" style="margin-top: 10px">
-                <img src="/assets/img/google.png" th:src="@{/assets/img/google.png}" width="20" style="margin-right: 5px;" alt="Sign in with Google">
-                Sign in with Google
-            </a>
-            <a class="w-100 btn btn-light btn-block bg-white" href="/oauth2/authorization/github-idp" role="link" style="margin-top: 10px">
-                <img src="/assets/img/github.png" th:src="@{/assets/img/github.png}" width="24" style="margin-right: 5px;" alt="Sign in with Github">
-                Sign in with Github
-            </a>
-        </div>
-    </form>
+        </form>
+
+        <!-- 手机号短信验证码登录 -->
+        <form id="sms-login" method="post" th:action="@{/login}" style="display: none;">
+            <div class="form-floating mb-3">
+                <input type="text" id="phone" name="phone" class="form-control" placeholder="Phone Number" required>
+                <label for="phone">Phone Number</label>
+            </div>
+            <div class="form-floating mb-3">
+                <input type="text" id="smsCode" name="code" class="form-control" placeholder="SMS Code" required>
+                <label for="smsCode">SMS Code</label>
+            </div>
+            <input type="text" id="sms-type" name="type" value="sms" hidden="hidden">
+            <button type="button" class="btn btn-secondary w-100 mb-3" id="send-sms-code">Send SMS Code</button>
+            <button class="w-100 btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+        </form>
+    </div>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const passwordLoginForm = document.getElementById("password-login");
+        const smsLoginForm = document.getElementById("sms-login");
+
+        document.getElementById("switch-to-password").addEventListener("click", () => {
+            passwordLoginForm.style.display = "block";
+            smsLoginForm.style.display = "none";
+        });
+
+        document.getElementById("switch-to-sms").addEventListener("click", () => {
+            passwordLoginForm.style.display = "none";
+            smsLoginForm.style.display = "block";
+        });
+
+        document.getElementById("send-sms-code").addEventListener("click", () => {
+            const phone = document.getElementById("phone").value;
+            if (phone) {
+                fetch('/send-sms-code', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({phone})
+                }).then(response => {
+                    if (response.ok) {
+                        alert('SMS Code sent successfully.');
+                    } else {
+                        alert('Failed to send SMS Code.');
+                    }
+                });
+            } else {
+                alert('Please enter a phone number.');
+            }
+        });
+    });
+</script>
 </body>
 </html>
